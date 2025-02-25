@@ -5,16 +5,16 @@ import { useToast } from "@/hooks/use-toast";
 
 const GIFT_OPTIONS = {
   FLOWERS: [
-    { id: "1_rose", name: "1 rose", price: 100 },
-    { id: "3_rose", name: "3 rose bouquet", price: 300 }
+    { id: "1_rose", name: "1 rose", dbValue: "1 rose", price: 100 },
+    { id: "3_rose", name: "3 rose bouquet", dbValue: "3 rose bouquet", price: 300 }
   ],
   CHOCOLATES: [
-    { id: "amul", name: "amul dark choco", price: 100 },
-    { id: "bournville_50", name: "bournville dark choco-50%", price: 150 },
-    { id: "bournville_70", name: "bournville dark choco-70%", price: 200 }
+    { id: "amul", name: "amul dark choco", dbValue: "amul dark choco", price: 100 },
+    { id: "bournville_50", name: "bournville dark choco-50%", dbValue: "bournville dark choco-50%", price: 150 },
+    { id: "bournville_70", name: "bournville dark choco-70%", dbValue: "bournville dark choco-70%", price: 200 }
   ],
   PLUSHIES: [
-    { id: "random_plushie", name: "random plushie", price: 250 }
+    { id: "random_plushie", name: "random plushie", dbValue: "random plushie", price: 250 }
   ]
 };
 
@@ -93,20 +93,30 @@ const Index = () => {
       return;
     }
 
-    const giftName = Object.values(GIFT_OPTIONS)
+    const gift = Object.values(GIFT_OPTIONS)
       .flat()
-      .find(g => g.id === giftId)?.name;
+      .find(g => g.id === giftId);
+
+    if (!gift) {
+      toast({
+        title: "Error",
+        description: "Invalid gift selection",
+        variant: "destructive",
+      });
+      return;
+    }
 
     const { error } = await supabase
       .from("gift_orders")
       .insert({
-        gift_type: giftName,
+        gift_type: gift.dbValue,
         delivery_address: address,
         delivery_instructions: instructions,
         preferred_time: preferredTime,
       });
 
     if (error) {
+      console.error("Error inserting gift order:", error);
       toast({
         title: "Error",
         description: "Failed to place order. Please try again.",
@@ -115,7 +125,6 @@ const Index = () => {
       return;
     }
 
-    // Update balance
     const { error: balanceError } = await supabase
       .from("balance")
       .update({ amount: (balance || 0) - giftPrice })
@@ -132,10 +141,9 @@ const Index = () => {
 
     toast({
       title: "Success",
-      description: `Your ${giftName} will be delivered as requested!`,
+      description: `Your ${gift.name} will be delivered as requested!`,
     });
 
-    // Reset form and refresh balance
     setSelectedGift("");
     setSelectedCategory("");
     setInstructions("");
@@ -145,7 +153,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen w-full overflow-x-hidden">
-      {/* Hero Section */}
       <section className="relative h-screen flex items-center justify-center px-4">
         <div 
           ref={(el) => (fadeRefs.current[0] = el)}
@@ -160,7 +167,6 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Photo Gallery */}
       <section className="py-20 px-4">
         <div className="container max-w-7xl">
           <h2 
@@ -186,7 +192,6 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Note Section */}
       <section className="py-20 px-4 bg-secondary/50">
         <div className="container max-w-3xl">
           <div
@@ -202,7 +207,6 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Redeem Gifts Section */}
       <section className="py-20 px-4">
         <div className="container max-w-7xl">
           <div
@@ -293,7 +297,6 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Timeline */}
       <section className="py-20 px-4 bg-secondary/50">
         <div className="container max-w-5xl">
           <div
