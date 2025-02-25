@@ -1,20 +1,23 @@
+
 import { useEffect, useRef, useState } from "react";
 import { Heart, Gift, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
+type GiftType = "1 rose" | "3 rose bouquet" | "amul dark choco" | "bournville dark choco-50%" | "bournville dark choco-70%" | "random plushie";
+
 const GIFT_OPTIONS = {
   FLOWERS: [
-    { id: "1_rose", name: "1 rose", dbValue: "1 rose", price: 100 },
-    { id: "3_rose", name: "3 rose bouquet", dbValue: "3 rose bouquet", price: 300 }
+    { id: "1_rose", name: "1 rose", dbValue: "1 rose" as GiftType, price: 100 },
+    { id: "3_rose", name: "3 rose bouquet", dbValue: "3 rose bouquet" as GiftType, price: 300 }
   ],
   CHOCOLATES: [
-    { id: "amul", name: "amul dark choco", dbValue: "amul dark choco", price: 100 },
-    { id: "bournville_50", name: "bournville dark choco-50%", dbValue: "bournville dark choco-50%", price: 150 },
-    { id: "bournville_70", name: "bournville dark choco-70%", dbValue: "bournville dark choco-70%", price: 200 }
+    { id: "amul", name: "amul dark choco", dbValue: "amul dark choco" as GiftType, price: 100 },
+    { id: "bournville_50", name: "bournville dark choco-50%", dbValue: "bournville dark choco-50%" as GiftType, price: 150 },
+    { id: "bournville_70", name: "bournville dark choco-70%", dbValue: "bournville dark choco-70%" as GiftType, price: 200 }
   ],
   PLUSHIES: [
-    { id: "random_plushie", name: "random plushie", dbValue: "random plushie", price: 250 }
+    { id: "random_plushie", name: "random plushie", dbValue: "random plushie" as GiftType, price: 250 }
   ]
 };
 
