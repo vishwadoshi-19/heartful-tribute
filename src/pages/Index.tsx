@@ -142,9 +142,9 @@ const Index = () => {
       return;
     }
 
-    // Send WhatsApp notification
+    // Send email notification
     try {
-      const { error: whatsappError } = await supabase.functions.invoke('notify-whatsapp', {
+      const { error: emailError } = await supabase.functions.invoke('notify-order', {
         body: {
           gift_type: gift.dbValue,
           delivery_address: address,
@@ -153,12 +153,12 @@ const Index = () => {
         }
       });
 
-      if (whatsappError) {
-        console.error('Error sending WhatsApp notification:', whatsappError);
+      if (emailError) {
+        console.error('Error sending email notification:', emailError);
         // Don't show this error to the user since the order was successful
       }
     } catch (err) {
-      console.error('Error invoking WhatsApp notification:', err);
+      console.error('Error invoking email notification:', err);
     }
 
     toast({

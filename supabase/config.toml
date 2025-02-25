@@ -1,4 +1,4 @@
 
 project_id = "your-project-id"
-[functions.notify-whatsapp]
+[functions.notify-order]
 verify_jwt = true
