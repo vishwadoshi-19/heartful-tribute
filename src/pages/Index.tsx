@@ -1,9 +1,16 @@
-
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Heart, Gift, Calendar } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
   const fadeRefs = useRef<(HTMLElement | null)[]>([]);
+  const [balance, setBalance] = useState<number | null>(null);
+  const [selectedGift, setSelectedGift] = useState<string>("");
+  const [address, setAddress] = useState("");
+  const [instructions, setInstructions] = useState("");
+  const [preferredTime, setPreferredTime] = useState("");
+  const { toast } = useToast();
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -21,8 +28,80 @@ const Index = () => {
       if (ref) observer.observe(ref);
     });
 
+    fetchBalance();
+
     return () => observer.disconnect();
   }, []);
+
+  const fetchBalance = async () => {
+    const { data, error } = await supabase
+      .from("balance")
+      .select("amount")
+      .single();
+    
+    if (error) {
+      console.error("Error fetching balance:", error);
+      return;
+    }
+    
+    setBalance(data?.amount || 0);
+  };
+
+  const handleRedeemGift = async (giftType: string) => {
+    if (!address) {
+      toast({
+        title: "Missing Information",
+        description: "Please provide a delivery address",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const { error } = await supabase
+      .from("gift_orders")
+      .insert({
+        gift_type: giftType,
+        delivery_address: address,
+        delivery_instructions: instructions,
+        preferred_time: preferredTime,
+      });
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to place order. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Update balance (subtract 100 for each gift)
+    const { error: balanceError } = await supabase
+      .from("balance")
+      .update({ amount: (balance || 0) - 100 })
+      .eq("amount", balance);
+
+    if (balanceError) {
+      toast({
+        title: "Error",
+        description: "Failed to update balance. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Success",
+      description: `Your ${giftType} will be delivered as requested!`,
+    });
+
+    // Reset form and refresh balance
+    setAddress("");
+    setInstructions("");
+    setPreferredTime("");
+    setSelectedGift("");
+    fetchBalance();
+  };
 
   return (
     <div className="min-h-screen w-full overflow-x-hidden">
@@ -83,7 +162,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Virtual Gifts */}
+      {/* Redeem Gifts Section */}
       <section className="py-20 px-4">
         <div className="container max-w-7xl">
           <div
@@ -91,8 +170,12 @@ const Index = () => {
             className="text-center fade-in mb-16"
           >
             <Gift className="w-12 h-12 mx-auto mb-6 text-primary animate-float" />
-            <h2 className="font-display text-3xl md:text-4xl">Virtual Gifts</h2>
+            <h2 className="font-display text-3xl md:text-4xl">Redeem Gifts</h2>
+            <p className="mt-4 text-muted-foreground">
+              Available Balance: ${balance || 0}
+            </p>
           </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {["Flowers", "Plushies", "Chocolates"].map((gift, index) => (
               <div
@@ -102,7 +185,55 @@ const Index = () => {
               >
                 <h3 className="font-display text-xl mb-4">{gift}</h3>
                 <div className="aspect-square bg-muted rounded-lg mb-4" />
-                <p className="text-sm text-muted-foreground">A token of my affection</p>
+                <p className="text-sm text-muted-foreground mb-4">Cost: $100</p>
+                {selectedGift === gift ? (
+                  <div className="space-y-4">
+                    <input
+                      type="text"
+                      placeholder="Delivery Address"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      className="w-full p-2 rounded border border-border bg-background"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Delivery Instructions (Optional)"
+                      value={instructions}
+                      onChange={(e) => setInstructions(e.target.value)}
+                      className="w-full p-2 rounded border border-border bg-background"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Preferred Time (Optional)"
+                      value={preferredTime}
+                      onChange={(e) => setPreferredTime(e.target.value)}
+                      className="w-full p-2 rounded border border-border bg-background"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleRedeemGift(gift)}
+                        className="flex-1 bg-primary text-white px-4 py-2 rounded hover:bg-primary/90 transition-colors"
+                        disabled={(balance || 0) < 100}
+                      >
+                        Confirm
+                      </button>
+                      <button
+                        onClick={() => setSelectedGift("")}
+                        className="flex-1 bg-muted text-foreground px-4 py-2 rounded hover:bg-muted/90 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setSelectedGift(gift)}
+                    className="bg-primary text-white px-4 py-2 rounded hover:bg-primary/90 transition-colors"
+                    disabled={(balance || 0) < 100}
+                  >
+                    Redeem
+                  </button>
+                )}
               </div>
             ))}
           </div>
@@ -151,4 +282,3 @@ const Index = () => {
 };
 
 export default Index;
-
