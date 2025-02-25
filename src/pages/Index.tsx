@@ -142,6 +142,25 @@ const Index = () => {
       return;
     }
 
+    // Send WhatsApp notification
+    try {
+      const { error: whatsappError } = await supabase.functions.invoke('notify-whatsapp', {
+        body: {
+          gift_type: gift.dbValue,
+          delivery_address: address,
+          delivery_instructions: instructions,
+          preferred_time: preferredTime
+        }
+      });
+
+      if (whatsappError) {
+        console.error('Error sending WhatsApp notification:', whatsappError);
+        // Don't show this error to the user since the order was successful
+      }
+    } catch (err) {
+      console.error('Error invoking WhatsApp notification:', err);
+    }
+
     toast({
       title: "Success",
       description: `Your ${gift.name} will be delivered as requested!`,

@@ -1,1 +1,4 @@
-project_id = "asoguzidnslzqpcgrisz"
+
+project_id = "your-project-id"
+[functions.notify-whatsapp]
+verify_jwt = true
