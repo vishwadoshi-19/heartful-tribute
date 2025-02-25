@@ -26,25 +26,25 @@ export type Database = {
           created_at: string | null
           delivery_address: string
           delivery_instructions: string | null
-          gift_type: string
+          gift_type: Database["public"]["Enums"]["gift_type"]
           id: number
-          preferred_time: string | null
+          preferred_time: string
         }
         Insert: {
           created_at?: string | null
           delivery_address: string
           delivery_instructions?: string | null
-          gift_type: string
+          gift_type: Database["public"]["Enums"]["gift_type"]
           id?: number
-          preferred_time?: string | null
+          preferred_time: string
         }
         Update: {
           created_at?: string | null
           delivery_address?: string
           delivery_instructions?: string | null
-          gift_type?: string
+          gift_type?: Database["public"]["Enums"]["gift_type"]
           id?: number
-          preferred_time?: string | null
+          preferred_time?: string
         }
         Relationships: []
       }
@@ -56,7 +56,13 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      gift_type:
+        | "1 rose"
+        | "3 rose bouquet"
+        | "amul dark choco"
+        | "bournville dark choco-50%"
+        | "bournville dark choco-70%"
+        | "random plushie"
     }
     CompositeTypes: {
       [_ in never]: never

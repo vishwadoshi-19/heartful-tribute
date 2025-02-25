@@ -3,11 +3,29 @@ import { Heart, Gift, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
+const GIFT_OPTIONS = {
+  FLOWERS: [
+    { id: "1_rose", name: "1 rose", price: 100 },
+    { id: "3_rose", name: "3 rose bouquet", price: 300 }
+  ],
+  CHOCOLATES: [
+    { id: "amul", name: "amul dark choco", price: 100 },
+    { id: "bournville_50", name: "bournville dark choco-50%", price: 150 },
+    { id: "bournville_70", name: "bournville dark choco-70%", price: 200 }
+  ],
+  PLUSHIES: [
+    { id: "random_plushie", name: "random plushie", price: 250 }
+  ]
+};
+
+const DEFAULT_ADDRESS = "blueridge township";
+
 const Index = () => {
   const fadeRefs = useRef<(HTMLElement | null)[]>([]);
   const [balance, setBalance] = useState<number | null>(null);
   const [selectedGift, setSelectedGift] = useState<string>("");
-  const [address, setAddress] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<keyof typeof GIFT_OPTIONS | "">("");
+  const [address, setAddress] = useState(DEFAULT_ADDRESS);
   const [instructions, setInstructions] = useState("");
   const [preferredTime, setPreferredTime] = useState("");
   const { toast } = useToast();
@@ -47,20 +65,42 @@ const Index = () => {
     setBalance(data?.amount || 0);
   };
 
-  const handleRedeemGift = async (giftType: string) => {
-    if (!address) {
+  const getGiftPrice = (giftId: string): number => {
+    for (const category of Object.values(GIFT_OPTIONS)) {
+      const gift = category.find(g => g.id === giftId);
+      if (gift) return gift.price;
+    }
+    return 0;
+  };
+
+  const handleRedeemGift = async (giftId: string) => {
+    if (!preferredTime) {
       toast({
         title: "Missing Information",
-        description: "Please provide a delivery address",
+        description: "Please provide a preferred delivery time",
         variant: "destructive",
       });
       return;
     }
 
+    const giftPrice = getGiftPrice(giftId);
+    if ((balance || 0) < giftPrice) {
+      toast({
+        title: "Insufficient Balance",
+        description: "You don't have enough balance for this gift",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const giftName = Object.values(GIFT_OPTIONS)
+      .flat()
+      .find(g => g.id === giftId)?.name;
+
     const { error } = await supabase
       .from("gift_orders")
       .insert({
-        gift_type: giftType,
+        gift_type: giftName,
         delivery_address: address,
         delivery_instructions: instructions,
         preferred_time: preferredTime,
@@ -75,10 +115,10 @@ const Index = () => {
       return;
     }
 
-    // Update balance (subtract 100 for each gift)
+    // Update balance
     const { error: balanceError } = await supabase
       .from("balance")
-      .update({ amount: (balance || 0) - 100 })
+      .update({ amount: (balance || 0) - giftPrice })
       .eq("amount", balance);
 
     if (balanceError) {
@@ -92,14 +132,14 @@ const Index = () => {
 
     toast({
       title: "Success",
-      description: `Your ${giftType} will be delivered as requested!`,
+      description: `Your ${giftName} will be delivered as requested!`,
     });
 
     // Reset form and refresh balance
-    setAddress("");
+    setSelectedGift("");
+    setSelectedCategory("");
     setInstructions("");
     setPreferredTime("");
-    setSelectedGift("");
     fetchBalance();
   };
 
@@ -177,63 +217,76 @@ const Index = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {["Flowers", "Plushies", "Chocolates"].map((gift, index) => (
+            {Object.entries(GIFT_OPTIONS).map(([category, options], categoryIndex) => (
               <div
-                key={gift}
-                ref={(el) => (fadeRefs.current[10 + index] = el)}
+                key={category}
+                ref={(el) => (fadeRefs.current[10 + categoryIndex] = el)}
                 className="fade-in p-6 rounded-lg bg-secondary/50 text-center"
               >
-                <h3 className="font-display text-xl mb-4">{gift}</h3>
-                <div className="aspect-square bg-muted rounded-lg mb-4" />
-                <p className="text-sm text-muted-foreground mb-4">Cost: $100</p>
-                {selectedGift === gift ? (
-                  <div className="space-y-4">
-                    <input
-                      type="text"
-                      placeholder="Delivery Address"
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
-                      className="w-full p-2 rounded border border-border bg-background"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Delivery Instructions (Optional)"
-                      value={instructions}
-                      onChange={(e) => setInstructions(e.target.value)}
-                      className="w-full p-2 rounded border border-border bg-background"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Preferred Time (Optional)"
-                      value={preferredTime}
-                      onChange={(e) => setPreferredTime(e.target.value)}
-                      className="w-full p-2 rounded border border-border bg-background"
-                    />
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleRedeemGift(gift)}
-                        className="flex-1 bg-primary text-white px-4 py-2 rounded hover:bg-primary/90 transition-colors"
-                        disabled={(balance || 0) < 100}
-                      >
-                        Confirm
-                      </button>
-                      <button
-                        onClick={() => setSelectedGift("")}
-                        className="flex-1 bg-muted text-foreground px-4 py-2 rounded hover:bg-muted/90 transition-colors"
-                      >
-                        Cancel
-                      </button>
+                <h3 className="font-display text-xl mb-4">{category}</h3>
+                <div className="space-y-4">
+                  {options.map((gift) => (
+                    <div key={gift.id} className="p-4 bg-background rounded-lg">
+                      <p className="font-medium">{gift.name}</p>
+                      <p className="text-sm text-muted-foreground mb-2">${gift.price}</p>
+                      {selectedGift === gift.id ? (
+                        <div className="space-y-4">
+                          <input
+                            type="text"
+                            placeholder="Delivery Address"
+                            value={address}
+                            onChange={(e) => setAddress(e.target.value)}
+                            className="w-full p-2 rounded border border-border bg-background"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Delivery Instructions (Optional)"
+                            value={instructions}
+                            onChange={(e) => setInstructions(e.target.value)}
+                            className="w-full p-2 rounded border border-border bg-background"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Preferred Time (Required)"
+                            value={preferredTime}
+                            onChange={(e) => setPreferredTime(e.target.value)}
+                            className="w-full p-2 rounded border border-border bg-background"
+                            required
+                          />
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleRedeemGift(gift.id)}
+                              className="flex-1 bg-primary text-white px-4 py-2 rounded hover:bg-primary/90 transition-colors"
+                              disabled={(balance || 0) < gift.price}
+                            >
+                              Confirm
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSelectedGift("");
+                                setSelectedCategory("");
+                              }}
+                              className="flex-1 bg-muted text-foreground px-4 py-2 rounded hover:bg-muted/90 transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            setSelectedGift(gift.id);
+                            setSelectedCategory(category as keyof typeof GIFT_OPTIONS);
+                          }}
+                          className="bg-primary text-white px-4 py-2 rounded hover:bg-primary/90 transition-colors w-full"
+                          disabled={(balance || 0) < gift.price}
+                        >
+                          Redeem
+                        </button>
+                      )}
                     </div>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setSelectedGift(gift)}
-                    className="bg-primary text-white px-4 py-2 rounded hover:bg-primary/90 transition-colors"
-                    disabled={(balance || 0) < 100}
-                  >
-                    Redeem
-                  </button>
-                )}
+                  ))}
+                </div>
               </div>
             ))}
           </div>
