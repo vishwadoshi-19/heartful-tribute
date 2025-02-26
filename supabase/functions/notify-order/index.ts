@@ -90,7 +90,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Attempting to send email via Resend...");
     const emailResponse = await resend.emails.send({
-      from: "Gift Orders <onboarding@resend.dev>",
+      from: "vishwadoshi19@outlook.com", // Using your verified email address
       to: [recipientEmail],
       subject: "New Gift Order Received!",
       html: `
@@ -111,7 +111,7 @@ const handler = async (req: Request): Promise<Response> => {
         ...corsHeaders,
       },
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error in notify-order function:", error);
     console.error("Error details:", {
       name: error.name,
@@ -133,3 +133,4 @@ const handler = async (req: Request): Promise<Response> => {
 };
 
 serve(handler);
+
