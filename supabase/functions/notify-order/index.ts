@@ -18,11 +18,31 @@ interface OrderNotificationRequest {
 }
 
 const handler = async (req: Request): Promise<Response> => {
+  console.log("Function invoked with method:", req.method);
+
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Check for required environment variables
+  const resendApiKey = Deno.env.get("RESEND_API_KEY");
   const recipientEmail = Deno.env.get("NOTIFICATION_EMAIL");
+
+  console.log("Environment check:");
+  console.log("- RESEND_API_KEY present:", !!resendApiKey);
+  console.log("- NOTIFICATION_EMAIL present:", !!recipientEmail);
+
+  if (!resendApiKey) {
+    console.error("RESEND_API_KEY environment variable not set");
+    return new Response(
+      JSON.stringify({ error: "Email service not configured" }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      }
+    );
+  }
+
   if (!recipientEmail) {
     console.error("NOTIFICATION_EMAIL environment variable not set");
     return new Response(
@@ -35,16 +55,40 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    console.log("Parsing request body...");
+    const requestBody = await req.text();
+    console.log("Raw request body:", requestBody);
+
+    let orderData: OrderNotificationRequest;
+    try {
+      orderData = JSON.parse(requestBody);
+    } catch (parseError) {
+      console.error("Failed to parse request body:", parseError);
+      return new Response(
+        JSON.stringify({ error: "Invalid request body" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
     const { 
       gift_type, 
       delivery_address, 
-      delivery_instructions, 
+      delivery_instructions = '', 
       preferred_time 
-    }: OrderNotificationRequest = await req.json();
+    } = orderData;
 
-    console.log("Attempting to send email notification to:", recipientEmail);
-    console.log("Order details:", { gift_type, delivery_address, delivery_instructions, preferred_time });
+    console.log("Validated order data:", {
+      gift_type,
+      delivery_address,
+      delivery_instructions,
+      preferred_time,
+      recipientEmail
+    });
 
+    console.log("Attempting to send email via Resend...");
     const emailResponse = await resend.emails.send({
       from: "Gift Orders <onboarding@resend.dev>",
       to: [recipientEmail],
@@ -68,9 +112,18 @@ const handler = async (req: Request): Promise<Response> => {
       },
     });
   } catch (error) {
-    console.error("Error sending order notification:", error);
+    console.error("Error in notify-order function:", error);
+    console.error("Error details:", {
+      name: error.name,
+      message: error.message,
+      stack: error.stack
+    });
+
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        details: "Check function logs for more information" 
+      }),
       {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
