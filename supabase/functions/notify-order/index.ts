@@ -90,7 +90,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Attempting to send email via Resend...");
     const emailResponse = await resend.emails.send({
-      from: "vishwadoshi19@outlook.com", // Using your verified email address
+      from: "Gift Orders <onboarding@resend.dev>", // Using Resend's testing domain
       to: [recipientEmail],
       subject: "New Gift Order Received!",
       html: `
@@ -133,4 +133,3 @@ const handler = async (req: Request): Promise<Response> => {
 };
 
 serve(handler);
-
