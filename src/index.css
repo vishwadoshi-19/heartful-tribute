@@ -47,7 +47,7 @@
   }
 
   .timeline-line {
-    @apply absolute left-1/2 transform -translate-x-1/2 h-full w-px bg-border;
+    @apply absolute left-1/2 transform -translate-x-1/2 h-full w-px bg-primary/20;
   }
 
   .photo-grid {
@@ -55,7 +55,19 @@
   }
 
   .photo-card {
-    @apply relative overflow-hidden rounded-lg transition-all duration-300 hover:shadow-lg;
+    @apply relative overflow-hidden rounded-lg transition-all duration-300;
+  }
+
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-20px);
+    }
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
   }
 }
-

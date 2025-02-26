@@ -1,8 +1,8 @@
-
 import { useEffect, useRef, useState } from "react";
 import { Heart, Gift, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
 
 type GiftType = "1 rose" | "3 rose bouquet" | "amul dark choco" | "bournville dark choco-50%" | "bournville dark choco-70%" | "random plushie";
 
@@ -32,6 +32,13 @@ const Index = () => {
   const [instructions, setInstructions] = useState("");
   const [preferredTime, setPreferredTime] = useState("");
   const { toast } = useToast();
+
+  const timelineEvents = [
+    { date: "2023-12-25", title: "The day we met", description: "A serendipitous encounter that changed everything" },
+    { date: "2024-01-01", title: "Our first date", description: "Coffee, conversation, and instant connection" },
+    { date: "2024-01-15", title: "Adventures together", description: "Creating memories one adventure at a time" },
+    { date: "2024-02-14", title: "Beautiful moments", description: "Every moment with you is a treasure" }
+  ];
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -142,7 +149,6 @@ const Index = () => {
       return;
     }
 
-    // Send email notification
     try {
       const { error: emailError } = await supabase.functions.invoke('notify-order', {
         body: {
@@ -155,7 +161,6 @@ const Index = () => {
 
       if (emailError) {
         console.error('Error sending email notification:', emailError);
-        // Don't show this error to the user since the order was successful
       }
     } catch (err) {
       console.error('Error invoking email notification:', err);
@@ -175,12 +180,27 @@ const Index = () => {
 
   return (
     <div className="min-h-screen w-full overflow-x-hidden">
-      <section className="relative h-screen flex items-center justify-center px-4">
+      <section className="relative h-screen flex items-center justify-center px-4 overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none">
+          {[...Array(20)].map((_, i) => (
+            <Heart 
+              key={i}
+              className="absolute text-primary/20 animate-float"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                fontSize: `${Math.random() * 20 + 10}px`,
+                animationDelay: `${Math.random() * 5}s`,
+                animationDuration: `${Math.random() * 3 + 4}s`
+              }}
+            />
+          ))}
+        </div>
         <div 
           ref={(el) => (fadeRefs.current[0] = el)}
-          className="text-center fade-in"
+          className="text-center fade-in z-10"
         >
-          <h1 className="font-display text-4xl md:text-6xl lg:text-7xl mb-6">
+          <h1 className="font-display text-4xl md:text-6xl lg:text-7xl mb-6 bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">
             To My Dearest
           </h1>
           <p className="font-sans text-lg md:text-xl text-muted-foreground max-w-xl mx-auto">
@@ -193,7 +213,7 @@ const Index = () => {
         <div className="container max-w-7xl">
           <h2 
             ref={(el) => (fadeRefs.current[1] = el)}
-            className="font-display text-3xl md:text-4xl text-center mb-16 fade-in"
+            className="font-display text-3xl md:text-4xl text-center mb-16 fade-in bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60"
           >
             Our Story in Pictures
           </h2>
@@ -202,9 +222,9 @@ const Index = () => {
               <div
                 key={index}
                 ref={(el) => (fadeRefs.current[index + 1] = el)}
-                className="photo-card fade-in"
+                className="photo-card fade-in hover:scale-105 transition-transform duration-300"
               >
-                <div className="aspect-[4/5] bg-muted rounded-lg" />
+                <div className="aspect-[4/5] bg-muted rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300" />
                 <p className="mt-4 text-sm text-muted-foreground text-center">
                   A beautiful memory we shared together
                 </p>
@@ -214,14 +234,14 @@ const Index = () => {
         </div>
       </section>
 
-      <section className="py-20 px-4 bg-secondary/50">
+      <section className="py-20 px-4 bg-gradient-to-r from-secondary/30 to-primary/10">
         <div className="container max-w-3xl">
           <div
             ref={(el) => (fadeRefs.current[8] = el)}
             className="fade-in space-y-6 text-center"
           >
-            <Heart className="w-12 h-12 text-primary mx-auto animate-float" />
-            <h2 className="font-display text-3xl md:text-4xl mb-8">From My Heart to Yours</h2>
+            <Heart className="w-12 h-12 text-primary mx-auto animate-pulse" />
+            <h2 className="font-display text-3xl md:text-4xl mb-8 bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">From My Heart to Yours</h2>
             <p className="text-lg leading-relaxed text-muted-foreground">
               In the gentle whispers of memory, I find the echoes of our laughter, the warmth of your smile, and the beauty of the moments we shared. Though our paths may diverge, the love we shared has shaped me in ways words cannot express. Thank you for being a chapter in my story.
             </p>
@@ -319,34 +339,35 @@ const Index = () => {
         </div>
       </section>
 
-      <section className="py-20 px-4 bg-secondary/50">
+      <section className="py-20 px-4 bg-gradient-to-r from-secondary/30 to-primary/10">
         <div className="container max-w-5xl">
           <div
             ref={(el) => (fadeRefs.current[13] = el)}
             className="text-center fade-in mb-16"
           >
             <Calendar className="w-12 h-12 mx-auto mb-6 text-primary animate-float" />
-            <h2 className="font-display text-3xl md:text-4xl">Our Journey</h2>
+            <h2 className="font-display text-3xl md:text-4xl bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">Our Journey</h2>
           </div>
           <div className="relative">
             <div className="timeline-line" />
-            {[
-              "The day we met",
-              "Our first date",
-              "Adventures together",
-              "Beautiful moments"
-            ].map((event, index) => (
+            {timelineEvents.map((event, index) => (
               <div
-                key={event}
+                key={event.title}
                 ref={(el) => (fadeRefs.current[14 + index] = el)}
                 className={`fade-in relative flex items-center gap-8 mb-16 ${
                   index % 2 === 0 ? "flex-row" : "flex-row-reverse"
                 }`}
               >
-                <div className="w-1/2 p-6 bg-background rounded-lg shadow-sm">
-                  <h3 className="font-display text-xl mb-3">{event}</h3>
+                <div className="w-1/2 p-6 bg-background/80 backdrop-blur-sm rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Calendar className="w-4 h-4 text-primary" />
+                    <span className="text-sm text-muted-foreground">
+                      {format(new Date(event.date), 'MMMM d, yyyy')}
+                    </span>
+                  </div>
+                  <h3 className="font-display text-xl mb-3 text-primary">{event.title}</h3>
                   <p className="text-sm text-muted-foreground">
-                    A precious memory that will always stay with me
+                    {event.description}
                   </p>
                 </div>
                 <div className="w-1/2" />
