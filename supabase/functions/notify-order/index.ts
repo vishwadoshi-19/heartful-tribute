@@ -22,6 +22,18 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const recipientEmail = Deno.env.get("NOTIFICATION_EMAIL");
+  if (!recipientEmail) {
+    console.error("NOTIFICATION_EMAIL environment variable not set");
+    return new Response(
+      JSON.stringify({ error: "Recipient email not configured" }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      }
+    );
+  }
+
   try {
     const { 
       gift_type, 
@@ -30,9 +42,12 @@ const handler = async (req: Request): Promise<Response> => {
       preferred_time 
     }: OrderNotificationRequest = await req.json();
 
+    console.log("Attempting to send email notification to:", recipientEmail);
+    console.log("Order details:", { gift_type, delivery_address, delivery_instructions, preferred_time });
+
     const emailResponse = await resend.emails.send({
       from: "Gift Orders <onboarding@resend.dev>",
-      to: ["your-email@example.com"], // Replace with your email
+      to: [recipientEmail],
       subject: "New Gift Order Received!",
       html: `
         <h1>New Gift Order Details</h1>
@@ -42,6 +57,8 @@ const handler = async (req: Request): Promise<Response> => {
         <p><strong>Preferred Time:</strong> ${preferred_time}</p>
       `,
     });
+
+    console.log("Email sent successfully:", emailResponse);
 
     return new Response(JSON.stringify(emailResponse), {
       status: 200,
